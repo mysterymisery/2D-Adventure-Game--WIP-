@@ -16,4 +16,8 @@ Disclaimer:
 This game was created using images off the internet as proof of concept, I DO NOT own the images that were used as the character/Potion sprites
 The terrain was created using OpenGl primitives 
 
+Make sure the image .png files are in the same folder as the game otherwise the images will not render.
+
+Also be sure that the name of the .png images match the ones in the respository
+
 I hope that avoids any copyright issues or what not.
