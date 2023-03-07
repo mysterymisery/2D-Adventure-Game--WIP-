@@ -1,0 +1,507 @@
+<!-- Brayden Reece 9015 -->
+<html lang="en">
+	<head>
+		<meta CHARSET ="UTF-8">
+		<title>2D Adventure Game</title>
+		<script>
+			class Entity {
+			//parent class for all entities
+				constructor(name = "", health = 100, maxHealth = 100, attackBonus = 1, 
+				defenseBonus = 1, x = 0, y = 0, img = "") {
+					this.name = name;
+					this.health = health;
+					this.maxHealth = maxHealth;
+					this.attackBonus = attackBonus;
+					this.defenseBonus = defenseBonus;
+					this.x = x;
+					this.y = y;
+					this.img = document.getElementById(img);	
+				}
+				
+				//checks if entity can move to location
+				move(nX, nY) {
+				//1 means tree
+					//any of these values mean it is trying to move into outer wall
+					 if(nX == 0 || nY == 0 || nX == 13 || nY == 9) {
+						return 0;
+					}//tests collision for monsters against other monsters
+					if(this.name != "player") {
+						if(nX == myMain.entities["monster1"].x && nY == myMain.entities["monster1"].y) {
+							return 2;
+						}
+						else if(nX == myMain.entities["slime"].x && nY == myMain.entities["slime"].y) {
+							return 2;
+						}
+						else if(nX == myMain.entities["brute"].x && nY == myMain.entities["brute"].y) {
+							return 2;
+						}	
+						else if((nX == myMain.entities["potion"].x && nY == myMain.entities["potion"].y) ||
+						   (nX == myMain.entities["monster1"].x && nY == myMain.entities["monster1"].y)) {
+							return 2;
+						   }
+						}
+					//2 means square contains a monster/ calls attack function for player to attack monster
+					if(this.name == "player") {
+						if(nX == myMain.entities["monster1"].x && nY == myMain.entities["monster1"].y) {
+							myMain.entities["player"].attack(1);
+							myMain.update(0);
+							return 2;
+					} 
+					else if(nX == myMain.entities["slime"].x && nY == myMain.entities["slime"].y) {
+							myMain.entities["player"].attack(2);
+							myMain.update(0);
+							return 2;
+					}
+					else if(nX == myMain.entities["brute"].x && nY == myMain.entities["brute"].y) {
+							myMain.entities["player"].attack(3);
+							myMain.update(0);
+							return 2;
+					} //if new x and y have a potion run potion function
+					else if( nX == myMain.entities["potion"].x && nY == myMain.entities["potion"].y) {
+							myMain.entities["player"].potion("potion");	
+						}
+					else if( nX == myMain.entities["potion2"].x && nY == myMain.entities["potion2"].y) {
+							myMain.entities["player"].potion("potion2");		
+					}
+				}			
+					
+					//3 means square contains a player for monster-player collision
+					else if(nX == myMain.entities["player"].x && nY == myMain.entities["player"].y) {
+						return 3;
+					}//means tree is in position
+					if(myMain.environment[nX][nY] == 1) {
+						return 0;
+					}
+					//if 1 is returned square is empty
+					else {
+						return 1;
+					}
+					
+				}
+				
+				//renders entity
+				render() {
+				if(this.x == 20 && this.y == 20) {
+					return;
+				}//draws potions
+					if(this.name == 'potion' || this.name == 'potion2') {
+					ctx.drawImage(this.img, this.x *64, this.y *64, 64, 64);
+						return;
+					}
+					//draws sprite and health bar if health is above 0
+					else {
+					if(this.health > 0) {
+					ctx.drawImage(this.img, this.x *64, this.y *64, 64, 64);
+					ctx.fillStyle = ('#FF0000');
+					ctx.fillRect(this.x *64, this.y *64, 7, this.health / 2);
+					}
+				}   
+					//if player health is below 0, disable buttons and display game over
+					if(this.health <= 0) {
+						if(this.name == "player") {
+							var result = document.getElementById("result");
+								result.innerHTML = "GAME OVER";
+								document.getElementById("up").disabled = true;
+								document.getElementById("down").disabled = true;
+								document.getElementById("left").disabled = true;
+								document.getElementById("right").disabled = true;
+							
+						}//if it is not player move to (x,y) outside of canvas 
+						if(this.name != "player") {
+							var tempX = this.x;
+							var tempY = this.y;
+							this.x = 20;
+							this.y = 20;
+							//myMain.entities["player"].x = tempX;
+							//myMain.entities["player"].y = tempY;
+							//myMain.update(0);
+							
+							//runs game over function
+							this.gameOver();
+						}
+						
+					}
+			}
+				//if all monster locations are at (20,20) then all are dead so display you win and disable buttons
+				gameOver() {
+					if((myMain.entities["monster1"].x >=16 && myMain.entities["monster1"].y >= 16) &&
+					   (myMain.entities["slime"].x >=16 && myMain.entities["slime"].y >= 16) &&
+					   (myMain.entities["brute"].x >=16 && myMain.entities["brute"].y >= 16)) {
+						var result = document.getElementById("result");
+						result.innerHTML = "YOU WIN!";
+						document.getElementById("up").disabled = true;
+						document.getElementById("down").disabled = true;
+						document.getElementById("left").disabled = true;
+						document.getElementById("right").disabled = true;
+						
+				}
+			}		
+				
+				//runs attack equation
+				attack(val) {
+				var num = Math.floor(Math.random() * 5) + 1;
+				// Damage = (other.ATK-this.DEF or 1 whichever is higher)*random number 1-6.
+			if(this.name == "player") {
+				if(val == 1) {
+					var damage = (myMain.entities["player"].attackBonus - myMain.entities["monster1"].defenseBonus);
+						if(damage > 0) {
+							damage = damage * num;
+						}
+						else {
+							damage = num;
+						}
+					myMain.entities["monster1"].health -= damage;	
+				}
+				if(val == 2) {
+						if(this.name == 'monster1' || this.name == 'slime' || this.name == 'brute') {
+								return;
+						}
+						else {
+						var damage = (myMain.entities["player"].attackBonus - myMain.entities["slime"].defenseBonus);
+						if(damage > 0) {
+							damage = damage * num;
+						}
+						else {
+							damage = num;
+						}
+					myMain.entities["slime"].health -= damage;	
+				}
+			}
+				if(val == 3) {
+					var damage = (myMain.entities["player"].attackBonus - myMain.entities["brute"].defenseBonus);
+						if(damage > 0) {
+							damage = damage * num;
+						}
+						else {
+							damage = num;
+						}
+					myMain.entities["brute"].health -= damage;	
+				}
+			}
+			
+				if(val == 4) {
+					var damage = (this.attackBonus - myMain.entities["player"].defenseBonus);
+						if(damage > 0) {
+							damage = damage * num;
+						}
+						else {
+							damage = num;
+						}
+					myMain.entities["player"].health -= damage;	
+				}				
+			}
+			//if player is moving to spot, move player there and move potion outside canvas
+			potion(val) {
+			if(this.name == "player") {
+				var tempX = myMain.entities[val].x;
+				var tempY = myMain.entities[val].y;
+				
+				this.health = this.maxHealth;
+				myMain.entities[val].x = -1;
+				myMain.entities[val].y = -1;
+				myMain.entities[this.name].x = tempX;
+				myMain.entities[this.name].y = tempY;
+				myMain.update(0);
+			}
+		}
+	}
+	
+			//player class
+			class Player extends Entity {
+			
+				constructor(x = 0, y =0) {
+					super("player", 100, 100, 11, 3, x, y, "hero");
+					
+				}
+			}
+			//monster class
+			class Monster extends Entity {
+				constructor(x = 0, y = 0 , atk = 0, hp = 0, maxHp = 0, defense = 0, name = '') {
+					super(name, maxHp, hp, atk, defense, x, y, name);	
+				}
+				
+				//picks new x and y for monster to move
+				moveMonster() {
+					if(this.x == 20 && this.y == 20) {
+						return;
+					}
+					//picks number between 1 and 4 for direction
+					var controllerNum = Math.floor(Math.random() * 4) + 1;
+					//in all cases, runs move() function to see if space is open
+					if(controllerNum == 1) {
+						if(this.move(this.x,this.y - 1) == 1) {
+							this.y = this.y-1;
+					}
+						if(this.move(this.x,this.y - 1) == 3) {
+							this.attack(4);
+					}
+				}
+				
+					if(controllerNum == 2) {
+						if(this.move(this.x,this.y + 1) == 1) {
+							this.y = this.y+1;
+					}	
+						if(this.move(this.x,this.y + 1) == 3) {
+							this.attack(4);
+						}
+				}
+					if(controllerNum == 3) {
+						if(this.move(this.x-1,this.y) == 1) {
+							this.x = this.x-1;
+					}
+						if(this.move(this.x-1,this.y) == 3) {
+							this.attack(4);
+					}
+				}
+					if(controllerNum == 4) {
+						if(this.move(this.x+1,this.y) == 1) {
+							this.x = this.x+1;
+					}
+						if(this.move(this.x+1,this.y) == 3) {
+							this.attack(4);
+					}
+				}			
+			}
+		}
+			//potion class
+			class Potion extends Entity {
+				constructor(x = 0, y = 0 , name = '') {
+					super(name, 1, 1, 0, 0, x, y, "potion");	
+				}
+			}
+			
+			class Main {
+			//constructor creates environment array and entity dictionary
+				constructor() {
+				var rows = 14;
+				var cols = 10;
+				this.environment = new Array(rows);
+				this.entities = [];
+				this.test = document.getElementById('test');
+
+				
+				//inits environment array bc javascript goofy
+				for(var i = 0; i < this.environment.length; i++) {
+					this.environment[i] = new Array(cols);
+				}
+				
+				//inits 0 to all indexs of environment array
+				for(var x = 0; x < 14; x++) {
+					for(var y = 0; y < 10; y++) {
+						this.environment[x][y] = 0;
+					}
+				}
+				
+				//inits 1 to indexes that contain trees
+					this.environment[5][2] = 1;
+					this.environment[5][3] = 1;
+					this.environment[7][8] = 1;
+					this.environment[12][6] = 1;
+					
+					
+			
+				
+
+				//init all entities
+				this.entities["player"] = new Player(1, 8);
+				this.entities["monster1"] = new Monster(12, 1, 10, 100, 100, 2, "monster1");
+				this.entities["slime"] = new Monster(12, 8, 15, 50, 50, 1, "slime");
+				this.entities["brute"] = new Monster(9, 4, 6, 150, 150, 3,  "brute");
+				this.entities["potion"] = new Potion(1,1, "potion");
+				this.entities["potion2"] = new Potion(8,8, "potion");
+				
+				/*
+				//displays contents of environment array for testing purposes
+				for(var i = 0; i < this.environment.length; i++) {
+					this.test.innerHTML += ''+this.environment[i];
+				}*/
+				
+				
+			}
+			
+				//draw terrain function
+				drawTerrain() {
+					//drawing the rectangles
+					ctx.fillStyle = ('#D2B48C');
+					
+					//vertical squares left side
+					var x = 0;
+					var y = 0;
+					for(var i = 0; i < 14; i++) {
+						ctx.fillRect(x*64,0,64,64);
+						ctx.strokeRect(x*64,0,64,64);
+						x++;
+					}
+					//horizontal top
+					for(var i = 0; i < 10; i++) {
+						ctx.fillRect(0,y*64,64,64);
+						ctx.strokeRect(0,y*64,64,64);
+						y++;
+					}
+					
+					//horizontal bottom
+					x = 0;
+					y = 576;
+					for(var i = 0; i < 14; i++) {
+						ctx.fillRect(x*64,y,64,64);
+						ctx.strokeRect(x*64,y,64,64);
+						x++;
+					}
+					//vertical right
+					x = 832;
+					y = 0;
+					for(var i = 0; i < 10; i++) {
+						ctx.fillRect(x,y*64,64,64);
+						ctx.strokeRect(x,y*64,64,64);
+						y++;
+					}
+					
+					//drawing trees
+					//tree at (5,2)
+					ctx.fillStyle = ('#B5651D');
+					ctx.fillRect((64*5)+27, (64*2)+20,10,35);
+					ctx.fillStyle = ('#013220');
+					ctx.beginPath();
+					ctx.arc((64*5)+32,(64*2)+28, 12, 0, 2*Math.PI);
+					ctx.fill();
+					
+					//tree at (5,3)
+					ctx.fillStyle = ('#B5651D');
+					ctx.fillRect((64*5)+27, (64*3)+20,10,35);
+					ctx.fillStyle = ('#013220');
+					ctx.beginPath();
+					ctx.arc((64*5)+32,(64*3)+28, 12, 0, 2*Math.PI);
+					ctx.fill();
+					
+					//tree at (7,8)
+					ctx.fillStyle = ('#B5651D');
+					ctx.fillRect((64*7)+27, (64*8)+20,10,35);
+					ctx.fillStyle = ('#013220');
+					ctx.beginPath();
+					ctx.arc((64*7)+32,(64*8)+28, 12, 0, 2*Math.PI);
+					ctx.fill();
+					
+					//tree at (12,6)
+					ctx.fillStyle = ('#B5651D');
+					ctx.fillRect((64*12)+27, (64*6)+20,10,35);
+					ctx.fillStyle = ('#013220');
+					ctx.beginPath();
+					ctx.arc((64*12)+32,(64*6)+28, 12, 0, 2*Math.PI);
+					ctx.fill();
+					
+				}
+			
+			//updating player/monster location on click
+			update(val) {
+			var tempX = myMain.entities["player"].x;
+			var tempY = myMain.entities["player"].y;
+				if(val == 1) {
+					if(myMain.entities["player"].move(myMain.entities["player"].x,myMain.entities["player"].y-1) == 2) {
+						return;
+					}
+					if(myMain.entities["player"].move(myMain.entities["player"].x,myMain.entities["player"].y - 1) == 1) {
+						myMain.entities["player"].y = myMain.entities["player"].y - 1;
+					} 
+				}
+				if(val == 2) {
+					if(myMain.entities["player"].move(myMain.entities["player"].x,myMain.entities["player"].y+1) == 2) {
+						return;
+					}
+					if(myMain.entities["player"].move(myMain.entities["player"].x,myMain.entities["player"].y + 1) == 1) {
+						myMain.entities["player"].y =myMain.entities["player"].y + 1;
+					} 
+				}
+				if(val == 3) {
+					if(myMain.entities["player"].move(myMain.entities["player"].x-1,myMain.entities["player"].y) == 2) {
+						return;
+					}
+					if(myMain.entities["player"].move(myMain.entities["player"].x-1,myMain.entities["player"].y) == 1) {
+						myMain.entities["player"].x =myMain.entities["player"].x - 1;
+					} 
+				}
+				if(val == 4) {
+					if(myMain.entities["player"].move(myMain.entities["player"].x+1,myMain.entities["player"].y) == 2) {
+						return;
+					}
+					if(myMain.entities["player"].move(myMain.entities["player"].x+1,myMain.entities["player"].y) == 1) {
+						myMain.entities["player"].x =myMain.entities["player"].x + 1;
+					} 
+				}
+				//redraws canvas and terrain to cover up previous instance
+				myMain.canvasDraw();
+				myMain.drawTerrain();
+				//changes the monster X and Y before render
+				myMain.entities["monster1"].moveMonster();
+				myMain.entities["slime"].moveMonster();
+				myMain.entities["brute"].moveMonster();
+				//renders the new entity positions	
+				myMain.entities["player"].render();
+				myMain.entities["potion"].render();
+				myMain.entities["potion2"].render();
+				myMain.entities["monster1"].render();
+				myMain.entities["slime"].render();
+				myMain.entities["brute"].render();
+			}
+			
+			//draws canvas (used to erase previous entity)
+			 canvasDraw() {
+				ctx.fillStyle =  "#00FF00";
+				ctx.fillRect(0,0,896,640);
+				}
+		}
+			
+			function onClick(val) {
+				myMain.update(val)
+			}//since initial sprite render requires frame update, start button is used, which also enables movement buttons
+			function start() {
+				console.log("button Start Clicked");
+				myMain.update(0);
+				document.getElementById("up").disabled = false;
+				document.getElementById("down").disabled = false;
+				document.getElementById("left").disabled = false;
+				document.getElementById("right").disabled = false;
+				document.getElementById("start").disabled = true;
+				
+			}
+		</script>
+		<!-- Image preloads -->
+		<IMG src="hero.png" height = '64' width = '64' alt="hero"  id="hero" hidden>
+		<IMG src="potion.png" height = '64' width = '64' alt="potion"  id="potion" hidden>
+		<IMG src="brute.png" height = '64' width = '64' alt="brute"  id="brute" hidden>
+		<IMG src="slime.png" height = '64' width = '64' alt="slime"  id="slime" hidden>
+		<IMG src="monster.png" height = '64' width = '64' alt="monster"  id="monster1" hidden>
+		
+		<!-- <header id = 'test'>environment array: </header>
+		<!-- Canvas Creation -->
+		<div>
+		<canvas id = "myCanvas" width = "896" height = "640" background-color = "green"
+		style="border:1px solid #000000;"> </div>
+		
+		<!-- Player Controller -->
+		<div>Controller:</div>
+		<button id = 'up' onclick = "onClick(1);" disabled = true>UP </button>
+		<button id = 'down' onclick = "onClick(2);" disabled = true>DOWN </button>
+		<button id = 'left' onclick = "onClick(3);" disabled = true>LEFT </button>
+		<button id = 'right' onclick = "onClick(4);" disabled = true>RIGHT </button>
+		<br>
+		<button id = 'start' onclick = "start();">START </button>
+		<br>
+		<article id = result>
+		
+	</head>
+	<script>
+	
+	//Creates Canvas instance and Context
+	var canvas = document.getElementById("myCanvas");
+	var ctx = canvas.getContext("2d");
+	//makes canvas green yay
+	ctx.fillStyle =  "#00FF00";
+	ctx.fillRect(0,0,896,640);
+	//main creation and terrain drawing
+	myMain = new Main();
+	myMain.canvasDraw();
+	myMain.drawTerrain();
+	
+	
+	</script>
+</html>
